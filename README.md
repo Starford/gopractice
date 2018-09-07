@@ -1,8 +1,8 @@
-#practice go##
+# practice go
 
-##hello world##
+## hello world
 simple output of hello world text
 
-##variables##
+## variables
 how to play around with variables
 
