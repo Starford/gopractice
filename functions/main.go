@@ -33,6 +33,9 @@ func main() {
 	fmt.Println(hi())
 	fmt.Printf("%T \n", hi)
 
+	//recurssive function
+	fmt.Println(factorial(6), "the factorial")
+
 }
 
 func greet(name string) {
@@ -67,4 +70,12 @@ func makeGreeter(trailend string) func() string {
 	return func() string {
 		return "hello world from" + trailend
 	}
+}
+
+func factorial(number int) int {
+	if number == 0 {
+		return 1
+	}
+
+	return number * factorial(number-1)
 }

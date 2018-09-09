@@ -13,3 +13,4 @@ how to play around with functions
  * functions with variable arguments
  * anonymous functions
 
+* recurssion ( functions that call itself)
