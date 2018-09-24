@@ -1,0 +1,120 @@
+package main
+
+import (
+	"fmt"
+	"time"
+
+	"github.com/360EntSecGroup-Skylar/excelize"
+)
+
+/* the excel names and sheet name */
+const filename string = "samplefile.xlsx"
+const sheetname string = "sample"
+
+// func elapsed(what string) func() {
+// 	start := time.Now()
+// 	return func() {
+// 		fmt.Printf("%s took %v\n", what, time.Since(start))
+// 	}
+// }
+
+func main() {
+	start := time.Now()
+	//read the excel file
+	xlsx, err := excelize.OpenFile(filename)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	//get the rows
+	rows := xlsx.GetRows(sheetname)
+	//the fathers names sorted out
+	sortedfathersnames := make(chan []string)
+	go func(rows [][]string) {
+		fathersnamearray := make([]string, 0)
+		for _, row := range rows {
+			fathersnamearray = append(fathersnamearray, row[7])
+			fmt.Println("from loop", row)
+		}
+
+		// //rowvalues := <-theexcelrowschan
+		// fmt.Println(rows)
+		// //fmt.Printf("%T\n", rowvalues)
+		// rowvalues := <-theexcelrowschan
+
+		sortedfathersnames <- fathersnamearray
+	}(rows)
+	time.Sleep(time.Second * 3)
+	fmt.Printf("%T\n", sortedfathersnames)
+	fmt.Println(sortedfathersnames)
+	// //sort the fathers names
+	// sortedfathersnames := make(chan []string)
+	// go func() {
+
+	// 	fathersnamearray := make([]string, 0)
+	// 	rowvalues := <-theexcelrowschan
+
+	// 	for _, row := range rowvalues {
+	// 		fathersnamearray = append(fathersnamearray, row[7])
+	// 		fmt.Println("from loop", row)
+	// 	}
+
+	// 	//fmt.Printf("%T\n", fathersnamearray)
+	// 	//fmt.Println(fathersnamearray)
+
+	// 	sort.Strings(fathersnamearray)
+	// 	sortedfathersnames <- fathersnamearray
+
+	// }()
+
+	// fmt.Println(sortedfathersnames)
+	// fmt.Printf("Lenghth of data in excel: %d, Cap: %d \n", len(sortedfathernamesarray), cap(sortedfathernamesarray))
+	// // donerunning := make(chan bool)
+	// go func() {
+
+	// 	axis := 0     //axis of the cell
+	// 	cellaxis := 1 //axis of the cell
+
+	// 	xlsx, err := excelize.OpenFile(filename)
+
+	// 	fatherrowvalues := <-sortedfathersnames
+	// 	rowvalues := xlsx.GetRows(sheetname)
+
+	// 	//rowvalues := <-theexcelrowschan
+
+	// 	for _, row := range rowvalues {
+	// 		//fmt.Println("E" + strconv.Itoa(cellaxis))
+
+	// 		xlsx.SetCellValue(sheetname, "C"+strconv.Itoa(cellaxis), fatherrowvalues[axis])
+
+	// 		// fmt.Println(row[1])
+	// 		fmt.Println("from loop", row)
+
+	// 		axis++
+	// 		cellaxis++
+
+	// 	}
+
+	// 	//fmt.Println("Axis:", axis)
+
+	// 	// xlsx.SetCellValue(filename, "E4", "HLLO")
+	// 	// err = xlsx.Save()
+	// 	if err != nil {
+	// 		fmt.Println(err)
+	// 	}
+
+	// 	//donerunning <- true
+
+	// }()
+
+	// //[][]string
+	// //rows := xlsx.GetRows(sheetname)
+	// //fmt.Printf("%T\n", xlsx)
+	// finito := <-donerunning
+	// fmt.Println("imefika")
+	// fmt.Println("finito", finito)
+
+	fmt.Printf("took %v\n", time.Since(start))
+	//defer elapsed("page")()
+	//time.Sleep(time.Second * 2)
+}
