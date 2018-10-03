@@ -13,6 +13,7 @@ import (
 /* the excel names and sheet name */
 // const filename string = "samplefile.xlsx"
 // const sheetname string = "sample"
+const newfilename string = "output.xlsx"
 
 const filename string = "100000RecordsFull.xlsx"
 const sheetname string = "100000 Records"
@@ -57,33 +58,35 @@ func main() {
 
 	//fmt.Printf("Lenghth of data in all the data array: %d, Cap: %d \n", len(rows), cap(rows))
 
-	donerunning := make(chan bool)
-	go func() {
+	// donerunning := make(chan bool)
+	// go func() {
+	//index := xlsx.NewSheet(sheetname)
+	//xlsx.SetCellValue(sheetname, "A1", "Fathers name")
+	//xlsx.SetCellValue("Sheet1", "B2", 100)
+	/* excel title */
 
-		ignoreheadercounter := 1
-		for i := 0; i < len(rows)-1; i++ {
-			// fmt.Println(fathersnamearray[i])
-			// fmt.Println(noheaderarray[i])
+	ignoreheadercounter := 1
+	for i := 0; i < len(rows)-1; i++ {
+		// fmt.Println(fathersnamearray[i])
+		// fmt.Println(noheaderarray[i])
 
-			indexstring := strconv.Itoa(ignoreheadercounter + 1)
-			//stringbuffer := bytes.Buffer
-			var stringbuffer bytes.Buffer
-			stringbuffer.WriteString("L")
-			stringbuffer.WriteString(indexstring)
+		indexstring := strconv.Itoa(ignoreheadercounter + 1)
+		//to concat the letter
+		var stringbuffer bytes.Buffer
+		stringbuffer.WriteString("H")
+		stringbuffer.WriteString(indexstring)
 
-			//fmt.Println(stringbuffer.String())
+		xlsx.SetCellValue(sheetname, stringbuffer.String(), fathersnamearray[i])
 
-			xlsx.SetCellValue(sheetname, stringbuffer.String(), fathersnamearray[i])
+		ignoreheadercounter++
+	}
+	xlsx.SaveAs(newfilename)
+	//donerunning <- true
 
-			ignoreheadercounter++
-		}
-		xlsx.Save()
-		donerunning <- true
-
-	}()
-	finito := <-donerunning
+	//}()
+	//finito := <-donerunning
 	// fmt.Println("imefika")
-	fmt.Println("finito", finito)
+	//fmt.Println("finito", finito)
 
 	fmt.Printf("took %v\n", time.Since(start))
 
