@@ -3,23 +3,26 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"sort"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/360EntSecGroup-Skylar/excelize"
 )
 
-/* the excel names and sheet name */
-// const filename string = "samplefile.xlsx"
-// const sheetname string = "sample"
+// const max = 1 << 11
+const filename string = "samplefile.xlsx"
+const sheetname string = "sample"
+const newfilename string = "output.xlsx"
 
-const filename string = "100000RecordsFull.xlsx"
-const sheetname string = "100000 Records"
+// const filename string = "100000RecordsFull.xlsx"
+// const sheetname string = "100000 Records"
 
 func main() {
+	//runtime.GOMAXPROCS(runtime.NumCPU())
 	start := time.Now()
-
+	//string array of names
+	//rows := []string{"the headers", "father 8", "father 2", "father 5", "father 3", "father n.."}
 	//read the excel file
 	xlsx, err := excelize.OpenFile(filename)
 	if err != nil {
@@ -28,9 +31,6 @@ func main() {
 	}
 	//get the rows
 	rows := xlsx.GetRows(sheetname)
-
-	//this is the header
-	//header := rows[0]
 	//remove the headers
 	noheaderarray := append(rows[:0], rows[1:]...)
 
@@ -41,24 +41,18 @@ func main() {
 		//get the fathers name column
 		fathersnamearray = append(fathersnamearray, row[7])
 	}
-	sort.Strings(fathersnamearray)
 
-	//fmt.Printf("Lenghth of data in fathersnames array: %d, Cap: %d \n", len(fathersnamearray), cap(fathersnamearray))
-
-	//fmt.Println(noheaderarray)
-	//fmt.Printf("Lenghth of data in all the data array: %d, Cap: %d \n", len(noheaderarray), cap(noheaderarray))
-
-	//loop and create the new csv
-	//fmt.Println(header)
-	// for index := range noheaderarray {
-	// 	fmt.Println(fathersnamearray[index])
-	// 	fmt.Println(noheaderarray[index])
-	// }
-
-	//fmt.Printf("Lenghth of data in all the data array: %d, Cap: %d \n", len(rows), cap(rows))
+	fmt.Println("*************************************")
+	//fmt.Println("no header array", fathersnamearray)
+	parallelMergesort3(fathersnamearray)
+	//fmt.Println(fathersnamearray)
 
 	donerunning := make(chan bool)
 	go func() {
+		//index := xlsx.NewSheet(sheetname)
+		//xlsx.SetCellValue(sheetname, "A1", "Fathers name")
+		//xlsx.SetCellValue("Sheet1", "B2", 100)
+		/* excel title */
 
 		ignoreheadercounter := 1
 		for i := 0; i < len(rows)-1; i++ {
@@ -66,18 +60,16 @@ func main() {
 			// fmt.Println(noheaderarray[i])
 
 			indexstring := strconv.Itoa(ignoreheadercounter + 1)
-			//stringbuffer := bytes.Buffer
+			//to concat the letter
 			var stringbuffer bytes.Buffer
-			stringbuffer.WriteString("L")
+			stringbuffer.WriteString("H")
 			stringbuffer.WriteString(indexstring)
-
-			//fmt.Println(stringbuffer.String())
 
 			xlsx.SetCellValue(sheetname, stringbuffer.String(), fathersnamearray[i])
 
 			ignoreheadercounter++
 		}
-		xlsx.Save()
+		xlsx.SaveAs(newfilename)
 		donerunning <- true
 
 	}()
@@ -87,4 +79,64 @@ func main() {
 
 	fmt.Printf("took %v\n", time.Since(start))
 
+}
+
+func merge(s []string, middle int) {
+	helper := make([]string, len(s))
+	copy(helper, s)
+
+	helperLeft := 0
+	helperRight := middle
+	current := 0
+	high := len(s) - 1
+
+	for helperLeft <= middle-1 && helperRight <= high {
+		if helper[helperLeft] <= helper[helperRight] {
+			s[current] = helper[helperLeft]
+			helperLeft++
+		} else {
+			s[current] = helper[helperRight]
+			helperRight++
+		}
+		current++
+	}
+
+	for helperLeft <= middle-1 {
+		s[current] = helper[helperLeft]
+		current++
+		helperLeft++
+	}
+}
+
+func mergesort(s []string) {
+	if len(s) > 1 {
+		middle := len(s) / 2
+		mergesort(s[:middle])
+		mergesort(s[middle:])
+		merge(s, middle)
+	}
+}
+
+func parallelMergesort3(s []string) {
+	len := len(s)
+
+	if len > 1 {
+		middle := len / 2
+
+		var wg sync.WaitGroup
+		wg.Add(2)
+
+		go func() {
+			defer wg.Done()
+			parallelMergesort3(s[:middle])
+		}()
+
+		go func() {
+			defer wg.Done()
+			parallelMergesort3(s[middle:])
+		}()
+
+		wg.Wait()
+		merge(s, middle)
+	}
 }
