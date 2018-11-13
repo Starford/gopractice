@@ -1,13 +1,16 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"strconv"
+	"sync"
 	"time"
 
 	"github.com/360EntSecGroup-Skylar/excelize"
 )
 
-/* the excel names and sheet name */
+// const max = 1 << 11
 const filename string = "samplefile.xlsx"
 const sheetname string = "sample"
 const newfilename string = "output.xlsx"
@@ -16,8 +19,10 @@ const newfilename string = "output.xlsx"
 // const sheetname string = "100000 Records"
 
 func main() {
+	//runtime.GOMAXPROCS(runtime.NumCPU())
 	start := time.Now()
-
+	//string array of names
+	//rows := []string{"the headers", "father 8", "father 2", "father 5", "father 3", "father n.."}
 	//read the excel file
 	xlsx, err := excelize.OpenFile(filename)
 	if err != nil {
@@ -26,7 +31,6 @@ func main() {
 	}
 	//get the rows
 	rows := xlsx.GetRows(sheetname)
-
 	//remove the headers
 	noheaderarray := append(rows[:0], rows[1:]...)
 
@@ -37,72 +41,102 @@ func main() {
 		//get the fathers name column
 		fathersnamearray = append(fathersnamearray, row[7])
 	}
-	fmt.Println("fathers names BEFORE sort", fathersnamearray)
-	//sort.Strings(fathersnamearray)
-	fathersnamechan := make(chan []string)
-	//fathersnamechan <- fathersnamearray
-	mergerSortAsync(fathersnamearray, fathersnamechan)
 
-	//sortedStuff := <-fathersnamechan
-	fmt.Println("fathers names after sort")
+	fmt.Println("*************************************")
+	//fmt.Println("no header array", fathersnamearray)
+	parallelMergesort3(fathersnamearray)
+	//fmt.Println(fathersnamearray)
+
+	donerunning := make(chan bool)
+	go func() {
+		//index := xlsx.NewSheet(sheetname)
+		//xlsx.SetCellValue(sheetname, "A1", "Fathers name")
+		//xlsx.SetCellValue("Sheet1", "B2", 100)
+		/* excel title */
+
+		ignoreheadercounter := 1
+		for i := 0; i < len(rows)-1; i++ {
+			// fmt.Println(fathersnamearray[i])
+			// fmt.Println(noheaderarray[i])
+
+			indexstring := strconv.Itoa(ignoreheadercounter + 1)
+			//to concat the letter
+			var stringbuffer bytes.Buffer
+			stringbuffer.WriteString("H")
+			stringbuffer.WriteString(indexstring)
+
+			xlsx.SetCellValue(sheetname, stringbuffer.String(), fathersnamearray[i])
+
+			ignoreheadercounter++
+		}
+		xlsx.SaveAs(newfilename)
+		donerunning <- true
+
+	}()
+	finito := <-donerunning
+	// fmt.Println("imefika")
+	fmt.Println("finito", finito)
 
 	fmt.Printf("took %v\n", time.Since(start))
 
 }
 
-func mergerSortAsync(l []string, c chan []string) {
-	//commented below because am not sure what it is doing exactly
-	// if len(l) < 2 {
-	// 	c <- l
-	// 	return
-	// }
-	// if len(l) < 500 { //TUNE THIS NUMER AND DONT CREATE EXTRA WORK UNLESS IT'S BIGGER
-	// 	c <- mergeSort(l)
-	// 	return
-	// }
+func merge(s []string, middle int) {
+	helper := make([]string, len(s))
+	copy(helper, s)
 
-	mid := len(l) / 2
-	c1 := make(chan []string, 1)
-	c2 := make(chan []string, 1)
+	helperLeft := 0
+	helperRight := middle
+	current := 0
+	high := len(s) - 1
 
-	go mergerSortAsync(l[:mid], c1)
-	go mergerSortAsync(l[mid:], c2)
-
-	go func() { c <- merge(<-c1, <-c2) }()
-
-}
-
-func mergeSort(l []string) []string {
-	if len(l) < 2 {
-		return l
-	}
-	mid := len(l) / 2
-	a := mergeSort(l[:mid])
-	b := mergeSort(l[mid:])
-	return merge(a, b)
-}
-
-func merge(left, right []string) []string {
-	var i, j int
-	result := make([]string, len(left)+len(right))
-
-	for i < len(left) && j < len(right) {
-		if left[i] <= right[j] {
-			result[i+j] = left[i]
-			i++
+	for helperLeft <= middle-1 && helperRight <= high {
+		if helper[helperLeft] <= helper[helperRight] {
+			s[current] = helper[helperLeft]
+			helperLeft++
 		} else {
-			result[i+j] = right[j]
-			j++
+			s[current] = helper[helperRight]
+			helperRight++
 		}
+		current++
 	}
 
-	for i < len(left) {
-		result[i+j] = left[i]
-		i++
+	for helperLeft <= middle-1 {
+		s[current] = helper[helperLeft]
+		current++
+		helperLeft++
 	}
-	for j < len(right) {
-		result[i+j] = right[j]
-		j++
+}
+
+func mergesort(s []string) {
+	if len(s) > 1 {
+		middle := len(s) / 2
+		mergesort(s[:middle])
+		mergesort(s[middle:])
+		merge(s, middle)
 	}
-	return result
+}
+
+func parallelMergesort3(s []string) {
+	len := len(s)
+
+	if len > 1 {
+		middle := len / 2
+
+		var wg sync.WaitGroup
+		wg.Add(2)
+
+		go func() {
+			defer wg.Done()
+			parallelMergesort3(s[:middle])
+		}()
+
+		go func() {
+			defer wg.Done()
+			parallelMergesort3(s[middle:])
+		}()
+
+		wg.Wait()
+		merge(s, middle)
+	}
 }

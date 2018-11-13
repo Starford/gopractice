@@ -12,3 +12,8 @@ currently reading the file takes over a minute
 but work in progress
 
 using the [excelize](github.com/360EntSecGroup-Skylar/excelize) to read and write the excel file
+
+
+resource 
+https://hackernoon.com/parallel-merge-sort-in-go-fe14c1bc006
+https://github.com/teivah/golang-parallel-mergesort/blob/master/mergesort.go
